@@ -103,7 +103,7 @@ public class VarausjarjestelmaSovellus implements CommandLineRunner {
 
             conn.prepareStatement("INSERT INTO Varaus"
                     + " (hotellihuone_numero, asiakas_id, alku, loppu)"
-                    + " VALUES (1, 1, '2000-02-15 16:00:00', '2000-02-16 10:00:00');").executeUpdate();
+                    + " VALUES (1, 1, '2000-02-10 16:00:00', '2000-02-15 10:00:00');").executeUpdate();
 
             conn.prepareStatement("INSERT INTO Lisavaruste"
                     + " (Varaus_id, nimi)"

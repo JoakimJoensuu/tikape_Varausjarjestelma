@@ -287,9 +287,11 @@ public class Varausjarjestelma {
 
             String huone = jdbcTemplate.query("SELECT Tyyppi.nimi, Hotellihuone.numero, Hotellihuone.paivahinta FROM Hotellihuone JOIN Tyyppi ON Tyyppi.id = Hotellihuone.tyyppi_id WHERE Hotellihuone.numero = ?", (rs, rowNum) -> rs.getString("Tyyppi.nimi") + ", " + rs.getString("Hotellihuone.numero") + ", " + rs.getString("Hotellihuone.paivahinta"), huonenumero).get(0);
             List<Date> alkupaivat = jdbcTemplate.query(
-                    "SELECT Varaus.alku FROM Varaus JOIN Hotellihuone ON Hotellihuone.numero = Varaus.hotellihuone_numero WHERE Hotellihuone.numero = ? AND ((? < varaus.alku AND varaus.alku < ?) OR (? < varaus.loppu AND varaus.loppu < ?))", (rs, rowNum) -> rs.getTimestamp("varaus.alku"), huonenumero, alku, loppu, alku, loppu);
+                    "SELECT Varaus.alku FROM Varaus "
+                    + "JOIN Hotellihuone ON Hotellihuone.numero = Varaus.hotellihuone_numero "
+                    + "WHERE Hotellihuone.numero = ? AND ((? < varaus.alku AND varaus.alku < ?) OR (? < varaus.loppu AND varaus.loppu < ?) OR (? > varaus.alku AND varaus.loppu > ?))", (rs, rowNum) -> rs.getTimestamp("varaus.alku"), huonenumero, alku, loppu, alku, loppu, alku, loppu);
             List<Date> loppupaivat = jdbcTemplate.query(
-                    "SELECT Varaus.loppu FROM Varaus JOIN Hotellihuone ON Hotellihuone.numero = Varaus.hotellihuone_numero WHERE Hotellihuone.numero = ? AND ((? < varaus.alku AND varaus.alku < ?) OR (? < varaus.loppu AND varaus.loppu < ?))", (rs, rowNum) -> rs.getTimestamp("varaus.loppu"), huonenumero, alku, loppu, alku, loppu);
+                    "SELECT Varaus.loppu FROM Varaus JOIN Hotellihuone ON Hotellihuone.numero = Varaus.hotellihuone_numero WHERE Hotellihuone.numero = ? AND ((? < varaus.alku AND varaus.alku < ?) OR (? < varaus.loppu AND varaus.loppu < ?) OR (? > varaus.alku AND varaus.loppu > ?))", (rs, rowNum) -> rs.getTimestamp("varaus.loppu"), huonenumero, alku, loppu, alku, loppu, alku, loppu);
 
             Date haluttualkupaiva = java.sql.Timestamp.valueOf(alku);
             Date haluttuloppupaiva = java.sql.Timestamp.valueOf(loppu);
@@ -315,7 +317,8 @@ public class Varausjarjestelma {
                     paiviaVarattuna += TimeUnit.DAYS.convert(haluttuloppupaiva.getTime() - alkupaiva2.getTime(), TimeUnit.MILLISECONDS);
                 } else if (haluttualkupaiva.compareTo(alkupaiva2) > 0 && loppupaiva2.compareTo(haluttuloppupaiva) <= 0) {
                     paiviaVarattuna += TimeUnit.DAYS.convert(loppupaiva2.getTime() - haluttualkupaiva.getTime(), TimeUnit.MILLISECONDS);
-
+                } else if (haluttualkupaiva.compareTo(alkupaiva2) > 0 && loppupaiva2.compareTo(haluttuloppupaiva) > 0) {
+                    paiviaVarattuna += TimeUnit.DAYS.convert(haluttuloppupaiva.getTime() - haluttualkupaiva.getTime(), TimeUnit.MILLISECONDS);
                 }
             }
 
@@ -346,9 +349,9 @@ public class Varausjarjestelma {
 
             String tyyppi = jdbcTemplate.query("SELECT Tyyppi.nimi FROM Tyyppi WHERE Tyyppi.id = ?", (rs, rowNum) -> rs.getString("Tyyppi.nimi") + ", ", huonetyyppi).get(0);
             List<Date> alkupaivat = jdbcTemplate.query(
-                    "SELECT Varaus.alku FROM Varaus JOIN Hotellihuone ON Hotellihuone.numero = Varaus.hotellihuone_numero JOIN Tyyppi ON Tyyppi.id = Hotellihuone.tyyppi_id WHERE Tyyppi.id = ? AND ((? < varaus.alku AND varaus.alku < ?) OR (? < varaus.loppu AND varaus.loppu < ?))", (rs, rowNum) -> rs.getTimestamp("varaus.alku"), huonetyyppi, alku, loppu, alku, loppu);
+                    "SELECT Varaus.alku FROM Varaus JOIN Hotellihuone ON Hotellihuone.numero = Varaus.hotellihuone_numero JOIN Tyyppi ON Tyyppi.id = Hotellihuone.tyyppi_id WHERE Tyyppi.id = ? AND ((? < varaus.alku AND varaus.alku < ?) OR (? < varaus.loppu AND varaus.loppu < ?) OR (? > varaus.alku AND varaus.loppu > ?))", (rs, rowNum) -> rs.getTimestamp("varaus.alku"), huonetyyppi, alku, loppu, alku, loppu, alku, loppu);
             List<Date> loppupaivat = jdbcTemplate.query(
-                    "SELECT Varaus.loppu FROM Varaus JOIN Hotellihuone ON Hotellihuone.numero = Varaus.hotellihuone_numero JOIN Tyyppi ON Tyyppi.id = Hotellihuone.tyyppi_id WHERE Tyyppi.id = ? AND ((? < varaus.alku AND varaus.alku < ?) OR (? < varaus.loppu AND varaus.loppu < ?))", (rs, rowNum) -> rs.getTimestamp("varaus.loppu"), huonetyyppi, alku, loppu, alku, loppu);
+                    "SELECT Varaus.loppu FROM Varaus JOIN Hotellihuone ON Hotellihuone.numero = Varaus.hotellihuone_numero JOIN Tyyppi ON Tyyppi.id = Hotellihuone.tyyppi_id WHERE Tyyppi.id = ? AND ((? < varaus.alku AND varaus.alku < ?) OR (? < varaus.loppu AND varaus.loppu < ?) OR (? > varaus.alku AND varaus.loppu > ?))", (rs, rowNum) -> rs.getTimestamp("varaus.loppu"), huonetyyppi, alku, loppu, alku, loppu, alku, loppu);
             Date haluttualkupaiva = java.sql.Timestamp.valueOf(alku);
             Date haluttuloppupaiva = java.sql.Timestamp.valueOf(loppu);
 
@@ -373,13 +376,15 @@ public class Varausjarjestelma {
                     paiviaVarattuna += TimeUnit.DAYS.convert(haluttuloppupaiva.getTime() - alkupaiva2.getTime(), TimeUnit.MILLISECONDS);
                 } else if (haluttualkupaiva.compareTo(alkupaiva2) > 0 && loppupaiva2.compareTo(haluttuloppupaiva) <= 0) {
                     paiviaVarattuna += TimeUnit.DAYS.convert(loppupaiva2.getTime() - haluttualkupaiva.getTime(), TimeUnit.MILLISECONDS);
+                } else if (haluttualkupaiva.compareTo(alkupaiva2) > 0 && loppupaiva2.compareTo(haluttuloppupaiva) > 0) {
+                    paiviaVarattuna += TimeUnit.DAYS.convert(haluttuloppupaiva.getTime() - haluttualkupaiva.getTime(), TimeUnit.MILLISECONDS);
                 }
             }
 
             int tietyntyyppistenhuoneidenmaara = alkupaivat.size();
             long paiviaTarkastelussa = TimeUnit.DAYS.convert(haluttuloppupaiva.getTime() - haluttualkupaiva.getTime(), TimeUnit.MILLISECONDS);
             double varausprosentti = (double) paiviaVarattuna / (double) (paiviaTarkastelussa * tietyntyyppistenhuoneidenmaara) * 100;
-             
+
             if (Double.isNaN(varausprosentti)) {
                 varausprosentti = 0;
             }
