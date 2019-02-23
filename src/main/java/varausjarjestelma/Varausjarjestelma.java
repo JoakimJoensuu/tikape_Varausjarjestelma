@@ -379,6 +379,7 @@ public class Varausjarjestelma {
             int tietyntyyppistenhuoneidenmaara = alkupaivat.size();
             long paiviaTarkastelussa = TimeUnit.DAYS.convert(haluttuloppupaiva.getTime() - haluttualkupaiva.getTime(), TimeUnit.MILLISECONDS);
             double varausprosentti = (double) paiviaVarattuna / (double) (paiviaTarkastelussa * tietyntyyppistenhuoneidenmaara) * 100;
+            
             if (Double.isNaN(varausprosentti)) {
                 varausprosentti = 0;
             }
